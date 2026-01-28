@@ -104,8 +104,10 @@ def test_bbox_conversion():
     # 确保坐标不超出图像边界
     assert coco_bbox_edge[0] >= 0, "x 坐标不应为负"
     assert coco_bbox_edge[1] >= 0, "y 坐标不应为负"
-    assert coco_bbox_edge[0] + coco_bbox_edge[2] <= img_w, "bbox 不应超出图像右边界"
-    assert coco_bbox_edge[1] + coco_bbox_edge[3] <= img_h, "bbox 不应超出图像下边界"
+    assert coco_bbox_edge[0] + coco_bbox_edge[2] <= img_w, f"bbox 不应超出图像右边界: {coco_bbox_edge[0] + coco_bbox_edge[2]} > {img_w}"
+    assert coco_bbox_edge[1] + coco_bbox_edge[3] <= img_h, f"bbox 不应超出图像下边界: {coco_bbox_edge[1] + coco_bbox_edge[3]} > {img_h}"
+    assert coco_bbox_edge[2] > 0, "宽度应该大于0"
+    assert coco_bbox_edge[3] > 0, "高度应该大于0"
     
     # 测试用例 3: 验证无效坐标会抛出异常
     try:

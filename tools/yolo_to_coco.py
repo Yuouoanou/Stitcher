@@ -17,6 +17,7 @@ COCO格式：
 import json
 import os
 import argparse
+import datetime
 from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
@@ -84,10 +85,16 @@ def yolo_to_coco_bbox(yolo_bbox, img_width, img_height):
     y_min = y_center_px - h_px / 2
     
     # 限制坐标在有效范围内，防止边界溢出
-    x_min = max(0, min(x_min, img_width - 1))
-    y_min = max(0, min(y_min, img_height - 1))
-    w_px = min(w_px, img_width - x_min)
-    h_px = min(h_px, img_height - y_min)
+    x_min = max(0, x_min)
+    y_min = max(0, y_min)
+    
+    # 确保右下角不超出图像边界
+    x_max = min(x_min + w_px, img_width)
+    y_max = min(y_min + h_px, img_height)
+    
+    # 重新计算宽高
+    w_px = x_max - x_min
+    h_px = y_max - y_min
     
     return [x_min, y_min, w_px, h_px]
 
@@ -109,7 +116,6 @@ def convert_yolo_to_coco(images_dir, labels_dir, classes, split='train'):
     labels_dir = Path(labels_dir)
     
     # 初始化COCO数据结构
-    import datetime
     current_year = datetime.datetime.now().year
     
     coco_data = {
@@ -212,8 +218,11 @@ def convert_yolo_to_coco(images_dir, labels_dir, classes, split='train'):
                 print(f"Warning: {e} in {label_file}: {line}")
                 continue
             
-            # 计算面积
+            # 计算面积，跳过无效的bbox
             area = coco_bbox[2] * coco_bbox[3]
+            if area <= 0:
+                print(f"Warning: Invalid bbox area {area} in {label_file}: {line}")
+                continue
             
             # 添加标注信息
             annotation = {
