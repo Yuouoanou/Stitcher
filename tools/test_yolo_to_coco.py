@@ -97,6 +97,24 @@ def test_bbox_conversion():
     assert abs(coco_bbox[2] - expected_w) < 1e-6, f"宽度错误: {coco_bbox[2]} != {expected_w}"
     assert abs(coco_bbox[3] - expected_h) < 1e-6, f"高度错误: {coco_bbox[3]} != {expected_h}"
     
+    # 测试用例 2: 验证边界限制
+    yolo_bbox_edge = [0.95, 0.95, 0.2, 0.2]  # 接近边界的目标框
+    coco_bbox_edge = yolo_to_coco_bbox(yolo_bbox_edge, img_w, img_h)
+    
+    # 确保坐标不超出图像边界
+    assert coco_bbox_edge[0] >= 0, "x 坐标不应为负"
+    assert coco_bbox_edge[1] >= 0, "y 坐标不应为负"
+    assert coco_bbox_edge[0] + coco_bbox_edge[2] <= img_w, "bbox 不应超出图像右边界"
+    assert coco_bbox_edge[1] + coco_bbox_edge[3] <= img_h, "bbox 不应超出图像下边界"
+    
+    # 测试用例 3: 验证无效坐标会抛出异常
+    try:
+        invalid_bbox = [1.5, 0.5, 0.3, 0.4]  # 超出范围
+        yolo_to_coco_bbox(invalid_bbox, img_w, img_h)
+        assert False, "应该抛出 ValueError"
+    except ValueError:
+        pass  # 期望的行为
+    
     print("✓ bbox 坐标转换测试通过")
 
 

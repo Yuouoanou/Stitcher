@@ -72,7 +72,7 @@ python tools/yolo_to_coco.py \
   "info": {
     "description": "YOLO to COCO converted dataset - train",
     "version": "1.0",
-    "year": 2024
+    "year": 2026  // 自动使用当前年份
   },
   "images": [
     {

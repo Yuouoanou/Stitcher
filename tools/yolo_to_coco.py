@@ -63,8 +63,15 @@ def yolo_to_coco_bbox(yolo_bbox, img_width, img_height):
         
     Returns:
         list: [x_min, y_min, width, height] (像素值)
+        
+    Raises:
+        ValueError: 如果YOLO坐标不在有效范围内
     """
     x_center, y_center, w, h = yolo_bbox
+    
+    # 验证YOLO坐标在有效范围内
+    if not (0 <= x_center <= 1 and 0 <= y_center <= 1 and 0 <= w <= 1 and 0 <= h <= 1):
+        raise ValueError(f"Invalid YOLO coordinates: {yolo_bbox}. All values must be in range [0, 1]")
     
     # 转换为像素坐标
     x_center_px = x_center * img_width
@@ -75,6 +82,12 @@ def yolo_to_coco_bbox(yolo_bbox, img_width, img_height):
     # 转换为左上角坐标
     x_min = x_center_px - w_px / 2
     y_min = y_center_px - h_px / 2
+    
+    # 限制坐标在有效范围内，防止边界溢出
+    x_min = max(0, min(x_min, img_width - 1))
+    y_min = max(0, min(y_min, img_height - 1))
+    w_px = min(w_px, img_width - x_min)
+    h_px = min(h_px, img_height - y_min)
     
     return [x_min, y_min, w_px, h_px]
 
@@ -96,11 +109,14 @@ def convert_yolo_to_coco(images_dir, labels_dir, classes, split='train'):
     labels_dir = Path(labels_dir)
     
     # 初始化COCO数据结构
+    import datetime
+    current_year = datetime.datetime.now().year
+    
     coco_data = {
         'info': {
             'description': f'YOLO to COCO converted dataset - {split}',
             'version': '1.0',
-            'year': 2024,
+            'year': current_year,
         },
         'licenses': [],
         'images': [],
@@ -189,8 +205,12 @@ def convert_yolo_to_coco(images_dir, labels_dir, classes, split='train'):
                 print(f"Warning: Invalid class_id {class_id} in {label_file}")
                 continue
             
-            # 转换bbox格式
-            coco_bbox = yolo_to_coco_bbox(yolo_bbox, img_width, img_height)
+            # 转换bbox格式，包含坐标验证和边界限制
+            try:
+                coco_bbox = yolo_to_coco_bbox(yolo_bbox, img_width, img_height)
+            except ValueError as e:
+                print(f"Warning: {e} in {label_file}: {line}")
+                continue
             
             # 计算面积
             area = coco_bbox[2] * coco_bbox[3]
